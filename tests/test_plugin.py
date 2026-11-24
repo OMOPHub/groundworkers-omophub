@@ -102,6 +102,22 @@ class HostedToolTests(unittest.TestCase):
             self.api.compare_mappings("MRN: example", "D3A.022", "2024.2")
         request.assert_not_called()
 
+    @patch.object(Vocabulary, "read")
+    def test_search_identifies_an_exact_code(self, read):
+        row = {
+            "concept_id": 1,
+            "concept_code": "D3A.022",
+            "concept_name": "Example name",
+            "vocabulary_id": "ICD10CM",
+            "domain_id": "Condition",
+            "concept_class_id": "code",
+            "invalid_reason": None,
+            "standard_concept": None,
+        }
+        read.return_value = {"data": [row], "meta": {"pagination": {}}}
+        result = self.api.search("d3a.022", "ICD10CM", "Condition")
+        self.assertEqual(result["rows"][0]["matched_term"], "D3A.022")
+
     @patch("groundworkers_omophub.httpx.request")
     def test_similarity_preserves_zero_threshold_and_degradation(self, request):
         data = {
@@ -234,6 +250,12 @@ class ReleaseComparisonTests(unittest.TestCase):
         }
         with self.assertRaisesRegex(ValueError, "Incomplete"):
             self.api.compare_mappings("ICD10CM", "D3A.022", "2024.2")
+
+        edges.return_value["pagination"]["has_next"] = True
+        edges.return_value["pagination"]["total_pages"] = 2
+        with self.assertRaisesRegex(ValueError, "Incomplete"):
+            self.api.compare_mappings("ICD10CM", "D3A.022", "2024.2")
+        self.assertEqual(edges.call_count, 2)
 
     def test_comparison_requires_two_explicit_releases(self):
         for release in ("latest", "2026.2"):

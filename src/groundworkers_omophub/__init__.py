@@ -211,7 +211,11 @@ class Vocabulary:
             match = next(
                 (
                     term
-                    for term in (row["concept_name"], *row.get("synonyms", []))
+                    for term in (
+                        row["concept_name"],
+                        row["concept_code"],
+                        *row.get("synonyms", []),
+                    )
                     if term.casefold() == query.strip().casefold()
                 ),
                 None,

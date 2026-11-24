@@ -440,8 +440,21 @@ async def run(release, suite):
         "OMOPHUB_API_KEY": os.environ["OMOPHUB_API_KEY"],
         "OMOPHUB_VOCAB_RELEASE": release,
     }
-    if "PYSTOW_HOME" in os.environ:
-        child_env["PYSTOW_HOME"] = os.environ["PYSTOW_HOME"]
+    for name in (
+        "PYSTOW_HOME",
+        "SSL_CERT_FILE",
+        "SSL_CERT_DIR",
+        "HTTP_PROXY",
+        "HTTPS_PROXY",
+        "ALL_PROXY",
+        "NO_PROXY",
+        "http_proxy",
+        "https_proxy",
+        "all_proxy",
+        "no_proxy",
+    ):
+        if name in os.environ:
+            child_env[name] = os.environ[name]
     params = StdioServerParameters(
         command=str(Path(sys.executable).with_name("groundworkers")),
         args=["--config-path", str(ROOT / "demo.toml"), "--transport", "stdio"],
@@ -486,7 +499,7 @@ async def run(release, suite):
                     "checks": checks,
                     "evidence": evidence,
                 }
-            except (ValueError, RuntimeError, KeyError) as exc:
+            except Exception as exc:  # noqa: BLE001 - record each failed case and run the rest
                 result = {"status": "error", "error": str(exc)}
             result.update(
                 api_tool_calls=client.calls - before,
@@ -506,7 +519,10 @@ if __name__ == "__main__":
     )
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
-    report = asyncio.run(run(args.release, args.suite))
+    try:
+        report = asyncio.run(run(args.release, args.suite))
+    except Exception as exc:  # noqa: BLE001 - setup and MCP transport failures use exit 2
+        parser.exit(2, f"Could not run the live checks: {exc}\n")
     output = json.dumps(report, indent=2) + "\n"
     if args.output:
         args.output.write_text(output)
