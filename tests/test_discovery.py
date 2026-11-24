@@ -5,9 +5,10 @@ import sys
 import unittest
 from pathlib import Path
 
-from examples.run_demo import TOOLS
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
+
+from examples.run_demo import TOOLS
 
 
 class DiscoveryTests(unittest.IsolatedAsyncioTestCase):

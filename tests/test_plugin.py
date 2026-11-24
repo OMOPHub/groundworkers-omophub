@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import AsyncMock, patch
 
 import httpx
+
 from examples.run_demo import Client
 from groundworkers_omophub import Coding, Vocabulary
 

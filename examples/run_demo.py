@@ -6,7 +6,7 @@ import json
 import os
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from importlib.metadata import version
 from pathlib import Path
 
@@ -433,7 +433,7 @@ async def run(release, suite):
         "vocab_release": release,
         "groundworkers_version": version("groundworkers"),
         "adapter_version": version("groundworkers-omophub"),
-        "started_at": datetime.now(timezone.utc).isoformat(),
+        "started_at": datetime.now(UTC).isoformat(),
         "cases": {},
     }
     async with (
