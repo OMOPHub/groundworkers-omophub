@@ -221,6 +221,7 @@ class Vocabulary:
 
     def by_code(self, vocabulary_id: str, concept_code: str) -> dict:
         """Look up a concept using its vocabulary and code."""
+        check_terminology_input([vocabulary_id, concept_code])
         path = f"concepts/by-code/{quote(vocabulary_id, safe='')}/{quote(concept_code, safe='')}"
         return {
             "vocab_release": self.release,

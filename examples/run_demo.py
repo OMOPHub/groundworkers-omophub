@@ -49,6 +49,8 @@ class Client:
 
     async def rows(self, tool, **params):
         rows = []
+        identities = set()
+        expected_total = None
         page = 1
         while True:
             data = await self.call(tool, page=page, **params)
@@ -59,7 +61,27 @@ class Client:
             meta = data["pagination"]
             if meta["page"] != page:
                 raise ValueError("Unexpected pagination cursor.")
-            rows.extend(data["rows"])
+            if expected_total is None:
+                expected_total = meta["total_items"]
+            if meta["total_items"] != expected_total:
+                raise ValueError("The result count changed between pages.")
+            for row in data["rows"]:
+                if tool == "descendants":
+                    identity = row  # Plugin descendant rows are numeric OMOP IDs.
+                elif tool == "relationships":
+                    identity = (
+                        row["source"]["concept_id"],
+                        row["relationship_id"],
+                        row["target"]["concept_id"],
+                    )
+                else:
+                    identity = row["concept_id"]
+                if identity in identities:
+                    raise ValueError(
+                        "Duplicate row across results; coverage is indeterminate."
+                    )
+                identities.add(identity)
+                rows.append(row)
             if not meta["has_next"]:
                 if len(rows) != meta["total_items"]:
                     raise ValueError("Incomplete result set after the final page.")
@@ -168,10 +190,6 @@ async def ascending_colon(client):
     # These are the two starting parents supplied by the published audit.
     broad = await client.rows("descendants", concept_id=443396)
     site = await client.rows("descendants", concept_id=4130997)
-    if len(set(broad)) != len(broad) or len(set(site)) != len(site):
-        raise ValueError(
-            "Duplicate descendants across pages; cannot establish coverage."
-        )
     outliers = set(site) - set(broad)
     topography = await client.code("ICDO3", "C18.2")
     topo_id = topography["concept_id"]

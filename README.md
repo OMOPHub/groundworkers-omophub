@@ -23,14 +23,14 @@ To install on another host directly from a reviewed commit, replace `COMMIT_SHA`
 python -m pip install "groundworkers-omophub @ git+https://github.com/OMOPHub/groundworkers-omophub.git@COMMIT_SHA"
 ```
 
-Set `OMOPHUB_API_KEY` using your credential manager and set a concrete release in the environment that starts Groundworkers. The plugin registers when both variables are present. The key’s permissions govern vocabulary access and quota. [Get an API key](https://dashboard.omophub.com) · [Available releases](https://docs.omophub.com/vocabulary-versions)
+Set `OMOPHUB_API_KEY` using your credential manager and set a concrete release in the environment that starts Groundworkers. Use the numeric `YYYY.N` release identifier, such as `2026.2`. Both variables must be present. A malformed release prevents the OMOPHub plugin from loading. The key’s permissions govern vocabulary access and quota. [Get an API key](https://dashboard.omophub.com) · [Available releases](https://docs.omophub.com/vocabulary-versions)
 
 ```sh
 export OMOPHUB_VOCAB_RELEASE=2026.2
 groundworkers --describe
 ```
 
-Restart an existing MCP session after changing its configuration. To try just the hosted tools with the bundled empty SQLite host configuration, run the following from the plugin directory and connect the command as a stdio server in your MCP client.
+Restart an existing MCP session after changing its configuration. The sample configuration, runner and tests are included in the repository and source distribution. For a wheel installation, check out the matching source revision to use those examples. To try just the hosted tools with the empty SQLite configuration, run the following from that directory and connect the command as a stdio server in your MCP client.
 
 ```sh
 groundworkers --config-path examples/demo.toml --transport stdio

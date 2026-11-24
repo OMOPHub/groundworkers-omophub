@@ -96,6 +96,10 @@ class HostedToolTests(unittest.TestCase):
             )
         with self.assertRaises(ValueError):
             self.api.find_similar_concepts(concept_id=5, query="example")
+        with self.assertRaises(ValueError):
+            self.api.by_code("ICD10CM", "patient id: example")
+        with self.assertRaises(ValueError):
+            self.api.compare_mappings("MRN: example", "D3A.022", "2024.2")
         request.assert_not_called()
 
     @patch("groundworkers_omophub.httpx.request")
@@ -121,6 +125,32 @@ class HostedToolTests(unittest.TestCase):
 
 
 class CoverageTests(unittest.IsolatedAsyncioTestCase):
+    async def test_descendants_are_ids_and_duplicate_pages_are_rejected(self):
+        client = Client(None, "2026.2")
+        first = {
+            "rows": [1],
+            "pagination": {
+                "page": 1,
+                "has_next": True,
+                "total_items": 2,
+                "total_pages": 2,
+            },
+        }
+        second = {
+            "rows": [2],
+            "pagination": {
+                "page": 2,
+                "has_next": False,
+                "total_items": 2,
+                "total_pages": 2,
+            },
+        }
+        client.call = AsyncMock(side_effect=[first, second])
+        self.assertEqual(await client.rows("descendants", concept_id=3), [1, 2])
+        client.call = AsyncMock(side_effect=[first, {**second, "rows": [1]}])
+        with self.assertRaisesRegex(ValueError, "Duplicate"):
+            await client.rows("descendants", concept_id=3)
+
     async def test_rejects_truncated_hierarchy(self):
         client = Client(None, "2026.2")
         client.call = AsyncMock(return_value={"truncated": True})
